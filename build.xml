@@ -371,13 +371,13 @@
 <mkdir dir="${cob.coverage.html.dir}" />
 </target>
 
-<target name="compile" depends="prepare">
-<echo>=== COMPILE ===</echo>
-<echo>Compiling ${src.dir} files ...</echo>
-<javac debug="on" srcdir="${src.dir}" destdir="${dest.dir.classes}" includes="com/**">
-<classpath refid="build.class.path" />
+<!--<target name="compile" depends="prepare">-->
+<!--<echo>=== COMPILE ===</echo>-->
+<!--<echo>Compiling ${src.dir} files ...</echo>-->
+<!--<javac debug="on" srcdir="${src.dir}" destdir="${dest.dir.classes}" includes="com/**">-->
+<!--<classpath refid="build.class.path" />-->
 <!-- classpath refid="cobertura.classpath" -->
-</javac>
+<!--</javac>-->
 
 <!-- compile files on the src-tests path -->
 <echo>Compiling ${src.tests.dir} files ...</echo>
