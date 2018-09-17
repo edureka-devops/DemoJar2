@@ -326,66 +326,107 @@
 	<!-- Execute the SonarQube analysis -->
 	<sonar:sonar />
 	</target> 
-target name="prepare" depends="clean, maven_dep_copy">
-	    <mkdir dir="${maven.reporting.outputDirectory}" />
-	    <!-- cobertura directories -->
-	    <mkdir dir="${cobertura.dir}" />
-	    <mkdir dir="${cob.instrumented.dir}" />
-	    <mkdir dir="${cob.reports.xml.dir}" />
-	    <mkdir dir="${cob.reports.html.dir}" />
-	    <mkdir dir="${cob.coverage.xml.dir}" />
-	    <mkdir dir="${cob.coverage.html.dir}" />
-		<path id="cobertura.classpath">
-			<fileset dir="${lib.cobertura.dir}">
-			        <include name="cobertura.jar" />
-			        <include name="lib/**/*.jar" />
-			    </fileset>
-		    <fileset dir="${project.3rdpartylibdir}"/>
-		  </path>
-		  <taskdef resource="tasks.properties" classpathref="cobertura.classpath"/>
-	  </target>
-	
-	<target name="instrument" depends="prepare,compile-tests">
-		<echo>Class Path: ${toString:cobertura.classpath}</echo>
-	    <cobertura-instrument todir="${cob.instrumented.dir}">
-	      <fileset dir="${maven.build.outputDir}">
-	        <include name="**/*.class"/>
-	      </fileset>
-	    </cobertura-instrument>
-	  </target>
-	
-	  <target name="cover-test" depends="instrument">
-	  	<echo message="Instrumented dir:${cob.instrumented.dir}"/>
-	  	<junit printSummary="yes" haltonerror="false" haltonfailure="false" fork="yes" dir=".">
-	  	      <sysproperty key="basedir" value="."/>
-	  	    <sysproperty key="net.sourceforge.cobertura.datafile"
-	  	        file="${cob.ser.file}" />
-	  	    <!--
-	  	        Note the classpath order: instrumented classes are before the
-	  	        original (uninstrumented) classes.  This is important.
-	  	    -->
-	  	    <classpath location="${cob.instrumented.dir}" />
-	  	    <classpath location="${maven.build.outputDir}" />
-	  		<classpath refid="cobertura.classpath" />
-		  	  <classpath>
-	  	     	<fileset dir="${project.3rdpartylibdir}"/>
-	  	        <pathelement location="${maven.build.testOutputDir}"/>
-	  	      </classpath>
-	  	   
-	        <batchtest skipNonTests="true" todir="${maven.test.reports}">
-	          <fileset dir="${maven.build.testDir}">
-	            <include name="**/Test*.java"/>
-	            <include name="**/*Test.java"/>
-	            <include name="**/*TestCase.java"/>
-	            <exclude name="**/*Abstract*Test.java"/>
-	          </fileset>
-	        </batchtest>
+<property name="lib.cobertura.dir" value="${lib.dir}/cobertura-1.9" />
+<property name="cobertura.jar.file" value="${lib.dir}/cobertura-1.9/cobertura.jar" />
+<property name="src.tests.dir" value="src/test" />
+<property name="cob.ser.file" value="cobertura.ser" />
+<property name="dest.dir" value="target" />
+<property name="dest.dir.classes" value="${dest.dir}/classes" />
+<property name="dest.dir.lib" value="${dest.dir.classes}/lib" />
+<property name="package.file" value="${dest.dir}/${package.name}" />
 
-		</junit>
-	  </target>
-	
-	  <!-- run this target to generate the coverage reports -->
-	  <target name="coverage-report" depends="cover-test">
-	    <cobertura-report srcdir="${src.dir}" destdir="${cobertura.dir}"/>
-	  </target>
+<!-- cobertura properties -->
+<property name="cobertura.dir" value="cobertura" />
+<property name="cob.instrumented.dir" value="${cobertura.dir}/instrumented" />
+<property name="cob.reports.dir" value="${cobertura.dir}/reports" />
+<property name="cob.reports.xml.dir" value="${cob.reports.dir}/junit-xml" />
+<property name="cob.reports.html.dir" value="${cob.reports.dir}/junit-html" />
+<property name="cob.coverage.xml.dir" value="${cob.reports.dir}/cobertura-xml" />
+<property name="cob.coverage.html.dir" value="${cob.reports.dir}/cobertura-html" />
+
+<path id="build.class.path">
+<fileset dir="lib">
+<include name="**/*.jar" />
+</fileset>
+</path>
+
+<target name="clean">
+<delete dir="${dest.dir}" />
+<delete dir="${reports.dir}" />
+<delete dir="${cobertura.dir}" />
+<delete file="${cob.ser.file}" />
+</target>
+
+<target name="prepare" depends="clean">
+<mkdir dir="${dest.dir}" />
+<mkdir dir="${dest.dir.classes}" />
+<mkdir dir="${dest.dir.classes}/META-INF" />
+<mkdir dir="${reports.dir}" />
+<!-- cobertura directories -->
+<mkdir dir="${cobertura.dir}" />
+<mkdir dir="${cob.instrumented.dir}" />
+<mkdir dir="${cob.reports.xml.dir}" />
+<mkdir dir="${cob.reports.html.dir}" />
+<mkdir dir="${cob.coverage.xml.dir}" />
+<mkdir dir="${cob.coverage.html.dir}" />
+</target>
+
+<target name="compile" depends="prepare">
+<echo>=== COMPILE ===</echo>
+<echo>Compiling ${src.dir} files ...</echo>
+<javac debug="on" srcdir="${src.dir}" destdir="${dest.dir.classes}" includes="com/**">
+<classpath refid="build.class.path" />
+<!-- classpath refid="cobertura.classpath" -->
+</javac>
+
+<!-- compile files on the src-tests path -->
+<echo>Compiling ${src.tests.dir} files ...</echo>
+<javac debug="on" srcdir="${src.tests.dir}" destdir="${dest.dir.classes}" includes="com/**">
+<classpath refid="build.class.path" />
+<!-- classpath refid="cobertura.classpath" -->
+</javac>
+</target>
+
+<!-- cobertura task definition -->
+<path id="cobertura.classpath">
+<fileset dir="${lib.dir}">
+<include name="${cobertura.jar.file}" />
+<include name="**/*.jar" />
+</fileset>
+</path>
+<taskdef classpathref="cobertura.classpath" resource="tasks.properties"/>
+
+<target name="instrument" depends="compile">
+<cobertura-instrument todir="${cob.instrumented.dir}">
+<fileset dir="${dest.dir.classes}">
+<include name="**/*.class"/>
+</fileset>
+</cobertura-instrument>
+</target>
+
+<target name="cover-test" depends="instrument">
+<junit dir="./" failureproperty="test.failure" printsummary="yes"
+fork="true" haltonerror="true">
+<classpath location="${cobertura.jar.file}"/>
+<classpath location="${cob.instrumented.dir}"/>
+<classpath>
+<path refid="build.class.path"/>
+</classpath>
+<batchtest fork="yes" todir="${reports.dir}">
+<fileset dir="${cob.instrumented.dir}">
+<include name="**/Test*"/>
+<include name="**/*Tests*"/>
+<include name="org/jaxen/javabean/*Test*" />
+<exclude name="**/TestingUtils*"/>
+<exclude name="**/AllTests*"/>
+</fileset>
+</batchtest>
+</junit>
+</target>
+
+<!-- run this target to generate the coverage reports -->
+<target name="coverage-report" depends="cover-test">
+<cobertura-report srcdir="${src.dir}" destdir="${cobertura.dir}"/>
+</target>
+
 </project>
