@@ -350,12 +350,12 @@
 </fileset>
 </path>
 
-<target name="clean">
+<!--<target name="clean">
 <delete dir="${dest.dir}" />
 <delete dir="${reports.dir}" />
 <delete dir="${cobertura.dir}" />
 <delete file="${cob.ser.file}" />
-</target>
+</target>-->
 
 <target name="prepare" depends="clean">
 <mkdir dir="${dest.dir}" />
