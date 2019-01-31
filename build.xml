@@ -386,6 +386,7 @@
 <!-- classpath refid="cobertura.classpath" -->
 </javac>
 </target>
+</project>
 
 <!-- cobertura task definition -->
 <path id="cobertura.classpath">
